@@ -1,0 +1,226 @@
+                          MEMORY MANAGEMENT
+
+The functions in memmgmt.c provide wrappers for the standard C functions
+for dynamically allocating and deallocating memory: malloc(), calloc(),
+realloc(), free(), and strdup().
+
+When compiled in debug mode (i.e. with NDEBUG not #defined), this layer
+provides additional validations to guard against misuse, including a test
+for memory leaks.  In addition, this layer provides a facility for
+scavenging memory when you're running short.
+
+The functions in memmgmt.c are powerful enough to be useful, simple enough
+to tinker with, and portable to any ANSI C environment.  Other, fancier 
+packages are available elsewhere, some of them as commercial products.
+
+
+FUNCTION SUMMARY
+
+(See the prototypes in util.h)
+
+void * allocMemory( size_t size ): replacement for malloc()
+
+void * allocNulMemory( size_t nitems, size_t size ): replacement for
+	calloc()
+
+void freeMemory( void * p ): replacement for free()
+
+void * resizeMemory( void * p, size_t size ): partial replacement for
+	realloc()
+
+char * strDup( const char * s ): replacement for strdup()
+
+void registerMemoryPool( void (* f) (void *), void * p ): installs a callback
+	function for scavenging memory
+
+void unRegisterMemoryPool( void (* f) (void *), void * p ): deinstalls a
+	memory scavenger
+
+void purgeMemoryPools( void ): invokes all currently installed memory scavengers
+
+
+ALLOCATION AND DEALLOCATION
+
+Use the allocMemory() and freeMemory() functions the same way you would
+otherwise use malloc() and free().  Each calls the corresponding standard
+function under the covers, but with some extra features.
+
+When allocMemory() is unable to allocate the requested storage, it tries
+to make more memory available by calling any previously installed callback
+functions (discussed below).  Then it tries the allocation again.  If it
+still can't allocate enough memory, it writes a message to stderr and then
+returns NULL.  (The message to stderr may not be appropriate in some
+environments; remove or modify it as needed.)
+
+If you compile memmgmt.c with NDEBUG #defined, then allocMemory() offers
+some additional features:
+
+1. Through the ASSERT macro it complains about an attempt to allocate
+   zero bytes.
+
+2. It fills the newly-allocated memory block with the arbitrary value
+   '\xFB'.  If a buggy program tries to read the memory before initializing
+   it, the resulting behavior will be more reproducible, and easier to
+   debug, than if the memory block were left filled with random garbage.
+
+3. It increments a count of the number of allocated blocks.
+
+4. It installs a callback function with atexit().  At the end of the
+   program, this callback function writes a brief memory usage report
+   to stderr, including a warning about any detected memory leaks.
+
+The allocNulMemory() function is a replacement for calloc().  It offers
+the same additional features as allocMemory, except of course that it
+fills newly-allocated memory with '\x00' instead of '\xFB'.
+
+The freeMemory() function merely calls the standard function free(),
+except that in the debug version:
+
+1. Through an ASSERT it complains about an attempt to free a NULL pointer.
+   This assertion may or may not be to your taste, but you can readily
+   remove it.
+
+2. It decrements a count of the number of allocated blocks.
+
+The resizeMemory() function attempts to shrink or expand a block of
+dynamically allocated memory.  Internally it just calls realloc().  If
+realloc() is not successful, resizeMemory() invokes any registered memory
+scavengers and tries again.  If realloc() still fails, resizeMemory writes
+a message to stderr and returns NULL.  In some environments the write to
+stderr may not be appropriate; remove or modify it as needed.
+
+Unlike realloc(), though, resizeMemory() will not accept a NULL pointer or
+a zero size.  If the client code passes such an invalid parameter,
+resizeMemory() will return NULL (or in the debugging version, abort).
+
+The strDup() function is a replacement for strdup(), using allocMemory()
+instead of malloc().
+
+
+MEMORY SCAVENGERS
+
+There are often ways to trade memory for performance by using various
+buffering techniques.  However, this approach has a downside: you risk
+running out of memory by using more than you need.
+
+The memmgmt.c functions provide a way to protect yourself from this
+possibility.  You can install callback functions to free up any memory that
+you have allocated but don't really need.  If allocMemory() has trouble
+allocating enough memory, it calls whatever memory scavenging functions
+you have previously installed; then it tries again.  This way you can trade
+memory for performance without increasing the risk of memory exhaustion.
+
+For example, you might read a lookup table from a file and store it in
+dynamically allocated memory.  Install a memory scavenger which will free
+the memory.  If you need to do another lookup later, and the table has
+been freed, load it from the file again.
+
+Another example: you may be constantly allocating and deallocating objects
+of a particular type.  Instead of churning through malloc() and free(),
+maintain a free list of objects which have been allocated but which are
+not currently in use.  Deallocate an object by sticking it on the free list;
+reallocate it by removing it from the list.  These operations involve only
+a little pointer-juggling, without the overhead of malloc() and free().
+Install a memory scavenger to empty the free list, calling free() for each
+of the objects in it.
+
+These approaches work best when all memory allocation passes through
+freeMemory().  If you allocate with malloc(), either directly or through
+some other library function such as strdup(), an allocation failure will
+not trigger any memory scavenging.  It is for that reason that the
+strDup() function is available as a replacement for strdup().  Likewise,
+resizeMemory is a partial replacement for realloc().  A replacement for
+calloc() would be easy to devise.
+
+Third party libraries which allocate memory cannot be replaced so easily.
+If an allocation fails, you can call purgeMemoryPools() yourself to invoke
+any memory scavengers, and then retry the operation.
+
+The registerMemoryPool() function installs a memory scavenging function;
+the unRegisterMemoryPool() function deinstalls it.  Each returns void, and
+has two parameters:
+
+1. A pointer to a memory scavenger function.  Such a function must take
+   a void pointer as a parameter, and return void.
+
+2. A void pointer.  If the memmgmt.c routines ever call the scavenger
+   function, they will pass it the same pointer with which it was
+   registered.
+
+In the debug version, if the same pair of pointers has already been installed
+(and not deinstalled), registerMemoryPool() complains through the ASSERT
+macro.  In the non-debug version it silently does nothing.
+
+Typically the void pointer is NULL.  The point of having it is to provide a
+mechanism to register multiple pools of the same type.  For example, you might
+manage a separate buffer pool for each database file.  The scavenging function
+would be the same, but the void pointers would point to different buffer
+pools.  When you close a database file, you would pass the corresponding pair
+of pointers to unRegisterMemoryPool().  This call would disable the scavenger
+for that pool without disabling if for the other pools.
+
+The current implementation stores up to 32 memory pools in an array.  That
+should be enough for most purposes, but if necessary you can easily enlarge
+the array.  With a little more work you can store the pointers in a linked
+list to remove any limit on the number of memory pools, other than memory
+constraints.
+
+
+MEMORY USAGE REPORT
+
+At program termination (a call to exit(), or when main() returns), the
+debugging version calls any memory-scavenging functions which have been
+registered and then writes a few messages to stderr:
+
+1. The number of memory pools registered;
+
+2. The number of memory pools which could not be registered, if any, due
+   to an array overflow;
+
+3. The number of allocations, i.e. calls to allocMemory;
+
+4. The maximum number of allocations outstanding at any one time;
+
+5. The number of unfreed allocations remaining, if any.
+
+This last feature, the report of memory leaks, is perhaps the most useful
+feature of the package, but it assumes that all allocations and deallocations
+are made through allocMemory() and freeMemory().  The package will not be
+aware of any direct calls to malloc() or free(), either in your own code or
+in library routines.
+
+In some environments (e.g. in a GUI) the use of stderr may not be appropriate.
+Eliminate or modify the memory usage report as needed.
+
+
+MACRO TRICKS
+
+Maybe you want to use code which calls the memmgmt.c routines, but you also
+want to use the standard malloc() and free() routines.  Instead of finding
+and replacing a lot of function calls, you can mask them with the following
+macros:
+
+	#define allocMemory    malloc
+	#define allocNulMemory calloc
+	#define freeMemory     free
+	#define resizeMemory   realloc
+	#define strDup         strdup
+	#define registerMemoryPool(x,y)   NULL
+	#define unRegisterMemoryPool(x,y) NULL
+	#define purgeMemoryPools()        NULL
+
+By doing so, of course, you will lose the benefits of any memory-scavenging
+functions.
+
+You can also use macros to replace standard functions with the memmgmt.c
+functions:
+
+	#define malloc  allocMemory
+	#define calloc  allocNulMemory
+	#define free    freeMemory
+	#define realloc resizeMemory
+	#define strdup  strDup
+
+However, the memmgmt.c functions are somewhat more finicky than the
+corresponding standard functions.  For example, resizeMemory() will not
+accept a NULL pointer or a zero size.

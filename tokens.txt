@@ -1,0 +1,108 @@
+                            TOKEN TYPES
+
+The plstok.h header declares an enum whose values enumerate the various
+kinds of tokens.  These values, together with comments in the header file,
+are mostly self-explanatory, but a few points remain to be made.
+
+
+LITERALS
+
+There are four kinds of literals:
+
+1. A string literal (T_string_lit) is enclosed by apostrophes, with any
+   embedded apostrophes doubled to distinguish them from delimiters.  The
+   text stored in the token of a string literal includes the delimiting
+   apostrophes.  Any embedded apostrophes remain doubled.  There is no
+   separate token to represent an apostrophe itself.
+
+2. Character literals (T_char_lit) are like string literals except that
+   the delimiting apostrophes enclose only a single character, or a pair
+   of apostrophes representing an apostrophe character.
+
+3. A quoted identifier (T_quoted_id) is enclosed by quotation marks (i.e.
+   double quotes).  It may contain up to 30 characters but no embedded
+   quotation marks.  The text stored in the token of a quoted identifier
+   includes the delimiting quotation marks.  There is no separate token to
+   represent a quotation mark itself.
+
+4. A numeric literal (T_num_lit) starts with a digit, or with a decimal point
+   immediately followed by a digit.  Any leading sign is recognized as a
+   separate token.  The number may be expressed in scientific notation (e.g.
+   45.901e-7), and the exponent may have a leading sign.  Since the tokenizer
+   does not try to enforce any limits on the size or precision of the number
+   represented, a numeric literal may be arbitrarily long.
+
+
+COMMENTS AND WHITESPACE
+
+A comment token (T_remark) includes the full text of the comment,
+including the delimiters ("/*" and "*/", or "--" and a newline).  The
+two types of comments are not distinguished by different token types.
+
+(This kind of token is named "T_remark" because the name "T_comment" is
+used for the reserved word "comment". )
+
+A white space token (T_whitespace) contains one or more white space
+characters (as defined by the standard C function isspace()), just as they
+appear in the source text between other tokens.  White space embedded within
+string literals, character literals, and quoted identifiers remains intact
+within those tokens.
+
+By default, the tokenizer preserves comments and white space in the form of
+tokens, so that the client code can reconstruct the original source text --
+in error messages, for example.  If the client code calls the pls_nopreserve()
+function, however, the tokenizer will suppress comment and white space tokens.
+
+
+UNQUOTED IDENTIFIERS
+
+An unquoted identifier consists of a letter followed by zero or more letters,
+digits, dollar signs, underscores, and pound signs ('#').  It may be no longer
+than 30 characters.  The text of a identifier token (T_identifier) contains
+the identifier with the same upper or lower case as appeared in the original
+source text.
+
+
+RESERVED WORDS
+
+Each reserved word is represented by a distinct token type, whose name
+consists of the reserved word (in lower case) preceded by "T_".  For
+example, a T_from represents "FROM".
+
+The text of a reserved word token contains the reserved word with the same
+capitalization as appeared in the input source text.
+
+
+ERROR TOKENS
+
+When the tokenizer encounters a lexical error, it returns an error token
+(T_error) carrying a pointer to an error message.  The token also contains
+the full text of whatever was interpreted as an error.  If the client code
+continues to call pls_next_tok(), the results are likely to be garbled for a
+while, until the tokenizer can recognize a valid token.
+
+
+LENGTH OF TOKENS
+
+Each of the following token types carries text which may be arbitrarily
+long:
+
+	T_error
+	T_string_lit
+	T_num_lit
+	T_remark
+	T_whitespace
+
+The pls_tok_size() function returns the full length of the text carried by a
+specified token, not including a terminal nul.  This text is stored
+internally as a linked list of segments.  To access this text, use the
+pls_copy_text() or pls_write_text() functions.
+
+The text of all other tokens is guaranteed to fit within the buf[] member
+of a Pls_tok structure, in the form of a nul-terminated string.  The client
+code can access it directly.
+
+If a string literal or a multiline (i.e. C-style) comment is not properly
+terminated, the tokenizer will try to load the rest of the input source text
+into memory.  If there isn't enough memory available, this attempt will
+fail, and the pls_next_tok() function will return NULL.

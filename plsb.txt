@@ -1,0 +1,59 @@
+
+                                PLSB
+
+Plsb rewrites PL/SQL source code to apply consistent use of indentation
+and other white space.  Synopsis:
+
+        plsb  [filename]
+
+Plsb reads the specified file as PL/SQL source code (or standard input 
+if no file is specified) and writes the reformatted version to standard 
+output.
+
+The reformatted code aligns the BEGINs with the ENDs, the IFs with the
+END IFs, and so forth.  It also includes blank spaces between tokens in
+a reasonably intelligent manner.  For example, it puts a blank space on
+either side of an equals sign, but not to the left of a semicolon.  All
+comments remain intact, but they may be rearranged a bit due to changes
+in indentation.
+
+Plsb is useful for code which is haphazard or chaotic, but if you use it 
+on code which is already not too bad, plsb will probably make it worse.
+Its most obvious deficiencies include:
+
+
+1. It doesn't even try to format DELETE statements properly.  Since there
+   is no END DELETE to tell the program when to unindent, the approach 
+   used elsewhere doesn't work.
+
+   In order to format other SQL statements (SELECT, INSERT, UPDATE), plsb
+   does a fair amount of syntax analysis.  The same approach has not yet 
+   been applied to DELETE statements.
+
+
+2. It often produces excessively long lines without breaking them up
+   into shorter ones.  This usually happens with:
+
+        a. Comma-delimited lists, such as an IN clause or a parameter 
+           list
+
+        b. Long expressions or conditions
+
+3. It doesn't align similar constructs in adjacent lines, such as the 
+   ':=' operator in a series of assignment statements.
+
+4. It isn't configurable at run time, by command-line options or by any
+   other means.
+
+5. It probably mangles various kinds of syntax which I'm not familiar 
+   with, or which I didn't consider.
+
+6. The indentation may not work right beyond 32 levels.  You're not likely
+   to need that much, unless you implement a long case structure with
+   ELSE IF instead of ELSIF.
+
+
+I plan to remedy most of these problems in future releases.  Meanwhile,
+if you find a case where plsb's behavior is peculiar, unexpected, or
+unwanted, please let me know.  It's difficult for me to anticipate all 
+the kinds of syntax which plsb may encounter.

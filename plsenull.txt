@@ -1,0 +1,48 @@
+                              PLSENULL
+
+Plsenull scans PL/SQL source code looking for attempts to test for 
+equality (or inequality) to NULL.  Synopsis:
+
+	plsenull [filename]
+
+Plsenull reads the specified file, or standard input if no file is
+specified.
+
+Specifically, plsenull looks for "=", "!=", or "<>" followed by NULL,
+or vice versa.  For example:
+
+	if emp_id = null then
+		set_error( "No employee id" );
+	end if;
+
+	if dept_id != null then
+		dept_name := get_dept_name( dept_id );
+	end if;
+
+Such code is legal PL/SQL but it's almost certainly a mistake, since nothing
+can ever be equal to NULL.  If you're like me, you sometimes code this kind
+of test through carelessness.  With plsenull you can quickly find and correct
+such a blunder.
+
+Whenever it finds such a construct, plsenull writes a message to standard
+error, reporting the line number and column number where it occurred.
+
+You can perform a similar search with a tool like grep, but grep can be
+confused by various syntactic complications:
+
+
+1. Differences in case: null, NULL, Null, nuLL, etc.
+
+2. Assignments of NULL, as in "emp_id := NULL;"
+
+3. Identifiers starting with "NULL", such as NULL_DEPARTMENT
+
+4. The presence of tabs, line feeds, or comments between the equals (or
+   not-equals) sign and the NULL
+
+5. The occurrence of " = NULL;" or the like in comments or string literals
+
+
+By careful use of grep you can reduce these problems, but you can't
+eliminate them.  By contrast, plsenull will reliably detect the offending
+code despite these complications.

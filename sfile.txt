@@ -1,0 +1,154 @@
+                          SFILE FUNCTIONS
+
+The functions in sfile.c are designed to read source code in any language.
+They keep track of the line number and column number of each character read.
+They also maintain a small pushback stack for temporarily putting characters
+back into the input stream to be re-read later.  The input text may come from
+a file or from a callback function installed by the client code.  Multiple
+input streams may be open concurrently.
+
+Dynamically allocated memory is managed through the functions in memmgmt.c,
+as described elsewhere.
+
+
+FUNCTION SUMMARY
+
+Sfile s_open( const char * filename ): Opens a source file with a specified
+	name.
+
+Sfile s_assign( FILE * pF ): Adopt an existing file pointer as a source of
+	input.
+
+Sfile s_callback( SF_func, void * p ): Install a callback function as a
+	source of input.
+
+void s_close( Sfile * pS ): Free all resources associated with an Sfile.
+
+int s_getc( Sfile S ): Fetch the next character (or EOF) from the input
+	stream.
+
+int s_ungetc( Sfile s, int c ): Return a character to the input stream to be
+	read again later.
+
+Sposition s_position( Sfile s ): Return the line number and column number of
+	the character most recently fetched.
+
+
+OPENING AN SFILE
+
+There are three ways to open an Sfile, depending on whether the client code
+provides a file name, a file pointer, or a callback function.  In each case,
+the package allocates an internal structure and returns an Sfile, to be used
+in subsequent calls for the same input source.
+
+An Sfile is a struct containing nothing but a void pointer p, pointing to
+the internal structure allocated by the open.  The pointer is void in order
+to hide the internal details from the client code.  It is packaged in a
+struct in order to provide type safety.  In C (though not in C++), a bare
+void * is assignment-compatible with any pointer type without a cast; hence
+the compiler will not complain if, for example, you pass a void * as a
+parameter when you should be passing a void **.  However, the compiler will
+not let you pass an Sfile when you should be passing an Sfile * (assuming
+that an appropriate prototype is in scope).
+
+If the open is unsuccessful for any reason, the pointer returned will be
+NULL.  Currently there is no mechanism for reporting the reason for the
+failure.
+
+The s_open() function accepts a file name, and attempts to open the file
+as input.
+
+The s_assign() function accepts a FILE * and uses it as the source of input.
+
+The s_callback() function accepts a pointer to a callback function and a void
+pointer.  The callback function must return an int (containing either an
+input character or EOF) and accept a void pointer as a parameter.  By using
+such a callback function you can provide input text from a source other than
+a file, such as a database or a C++ istream.
+
+
+CLOSING AN SFILE
+
+The s_close() function accepts a pointer to Sfile as a parameter.  It
+deallocates all resources associated with the Sfile and sets the pointer
+in the client code's Sfile to NULL.
+
+If the Sfile was opened by s_open(), then s_close() closes the input file.
+If the Sfile was opened by s_assign(), then s_close() leaves the input file
+open; it is the client code's responsibility to close the file when and if
+it wishes to.  If the Sfile was opened by s_callback(), then there is no
+file to close, or at least none that s_close() can know about.
+
+
+FETCHING CHARACTERS
+
+The s_getc() function takes an Sfile parameter and returns the next input
+character (or EOF) from that source.  This character may come from any of
+three sources:
+
+1. From a previous call to s_ungetc(), as stored in a pushback stack;
+
+2. From an input file, if the Sfile was opened by s_open() or s_assign();
+
+3. From a callback function, if the Sfile was opened by s_callback().
+   s_getc() will pass the void pointer with which the Sfile was opened.  The
+   callback function can use this pointer to identify whatever it needs to
+   identify.
+
+There is currently no way for the client code to determine whether EOF
+represents a true end-of-file or some kind of error condition.
+
+
+UNGETTING A CHARACTER
+
+Often you can't recognize the end of a token until you read past the
+end of it.  For example, a variable name may be terminated by some kind of
+punctuation character, which belongs to a separate token.  In other cases
+you may need to read several characters into a token before deciding what
+kind of token it is.
+
+In such cases it is useful to be able to back up -- to put one or more
+characters back into the input stream and read them again later.
+
+The s_ungetc() function provides such a capability.  It accepts as
+parameters an Sfile and an int, and pushes the int onto a stack for later
+retrieval by s_getc().  It stores the int as an int, unlike the standard
+C function ungetc(), which converts its int parameter to an unsigned char.
+As a result you can unget EOF (which is useful) or any other integer value
+(which is probably not useful).  The character passed to s_ungetc() need
+not correspond to a character previously fetched.
+
+s_ungetc() returns OKAY if successful and ERROR_FOUND if not (these macros
+are defined in util.h).  In the current implementation s_ungetc() fails if
+the Sfile contains a null pointer, or if the stack overflows (it can store
+up to ten characters).
+
+Besides storing the character to be ungotten, s_ungetc() decrements an
+internal counter which represents the position of the character on the
+line.  If you unget past the beginning of the current line, this counter
+becomes negative.  As a result, a later call to s_position (described
+below) may give misleading results.  Instead of reporting that a character
+resides on line 30 at column 17, for example, it may report that the
+character resides on line 31 at column -2.
+
+In order to avoid this problem, the package would have to remember the
+length of the previous line, and perhaps of several previous lines.  There
+are further complications if the client code ungets characters other than
+those which were originally fetched.
+
+There is no solution which is both simple and completely general.  
+Fortunately, the issue is not likely to arise in practice for any typical
+grammar.  A line break either delimits a token or is embedded within a token
+such as a comment or string literal.  It's hard to imagine a reason to unget
+past the beginning of a line.
+
+
+LINE AND COLUMN NUMBER
+
+The s_position() function is the main reason for sfile.c.  It reports the
+line number and column number of the character most recently fetched.  These
+numbers are packaged in a struct typedeffed as an Sposition, which contains
+two ints: line and col.
+
+Typically the client code will call s_position() for the first character
+in a token.

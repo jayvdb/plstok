@@ -1,0 +1,38 @@
+                              PLSCOUNT
+
+Plscount scans PL/SQL source code, counts PL/SQL tokens (exclusive of
+comments and white space), and writes the total to standard output.
+Synopsis:
+
+	plscount [filename]
+
+Plscount reads the specified file, or standard input if no file is
+specified.
+
+So why bother? If you want to know how big a module is, why not just 
+count the lines of source code, or the number of bytes? 
+
+Such crude measures may be useful, but they reflect not only the PL/SQL
+code itself but also white space and comments. The results may be 
+misleading. 
+
+For example: I often find myself reworking big, messy, tangled programs.
+Usually my version is significantly shorter than the original, at least
+until I start adding functionality that the original author left out. 
+From time to time I compare the size of my version to the size of the 
+original. The growing difference is a comforting sign that I'm making 
+progress. 
+
+However, line counts and byte counts typically understate the improvement.
+If I add comments or indentation, or if I break up a long line into 
+several lines to make it more readable, these crude measures penalize me 
+by making the source physically bigger. 
+
+The number of tokens is more meaningful because it is not contaminated by
+cosmetic factors. It is a measure -- still a crude one, to be sure -- of
+complexity rather than verbosity. 
+
+The counts produced by plscount may not be comparable to those produced 
+by some other tool, because there is more than one way to count tokens. 
+For example, plscount regards a string literal as a single token. Some 
+other tool might count the delimiting quote marks as separate tokens. 

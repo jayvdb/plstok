@@ -1,0 +1,15 @@
+                               PLSCAP
+
+Plscap is a filter for PL/SQL source code.  It changes all reserved words
+to upper case, and all identifiers (other than quoted identifiers) to
+lower case, leaving all other aspects of the source code unchanged.
+
+It accepts one optional command-line parameter specifying the name of the
+input file.  In the absence of such a parameter it reads standard input.
+It writes error messages to standard error; otherwise it writes all output
+to standard output.
+
+Plscap is largely intended as a demonstration of plstok, the PL/SQL
+tokenizer on which it is based.  In fact the code above the tokenizer
+level is trivially simple.  However, for those who like the kind of
+capitalization which plscap provides, plscap may actually be useful.

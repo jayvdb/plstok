@@ -1,0 +1,27 @@
+                              PLSQLF
+
+Plsqlf scans PL/SQL source code looking for string literals and character
+literals which contain embedded line feeds.  (The "qlf" part of the name 
+stands for "quoted line feed.")  Synopsis:
+
+	plsqlf [filename]
+
+Plsqlf reads the specified file, or standard input if no file is
+specified.  It will flag a statement such as the following:
+
+	dbms_output.put_line( 'No employees found for
+		specified department' );</PRE>
+
+Such code is legal PL/SQL but may not produce the expected results.
+In this example, the intended output is probably:
+
+	No employees found for specified department
+
+The actual output will be:
+
+	No employees found for
+		specified department
+
+Whenever it finds such a construct, plsenull writes a message to standard
+error, reporting the line number and column number where it occurred.
+

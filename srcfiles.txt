@@ -1,0 +1,38 @@
+                              SOURCE FILES
+
+The following files contain the source code included in this package.
+Some are described in more detail elsewhere as noted.
+
+
+memmgmt.c -- A layer of memory management.  See memmgmt.txt.
+
+myassert.c -- Home of myAssert(), called by the ASSERT macro.  Adapt as
+	needed for your environment.  If all other modules are compiled with
+	NDEBUG #defined, this module need not be included in the link.
+
+plscap.c -- top layer of the plscap utility.
+
+plsenull.c -- top layer of the plsenull utility.
+
+plspriv.h -- Header for internal use by the plstok package.
+
+plstok.h -- Header for the public interface to the plstok package.
+
+plstok00.c -- Implementation of low-level functions for constructing and
+	destroying tokens, and for managing the storage of long tokens.
+
+plstok01.c -- Implementation of higher-level functions for tokenizing
+	PL/SQL source code.  See plstok.txt.
+
+plstok02.c -- Code for mapping reserved words to the corresponding token
+	types.
+
+sfile.c -- I/O functions for reading generalized source code, keeping
+	track of line numbers and column numbers.  See sfile.txt.
+
+sfile.h -- Header for functions in sfile.c.
+
+ttok.c -- a test driver for the tokenizing functions; illustrates their use.
+
+util.h -- header for miscellaneous things not specific for tokenizers.
+

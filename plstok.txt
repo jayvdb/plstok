@@ -1,0 +1,150 @@
+                          TOKENIZING FUNCTIONS
+
+The following functions are part of the public interface for the tokenizer:
+
+Pls_next_tok * pls_next_tok( Sfile s ): creates the next token from a
+	specified Sfile and returns a pointer to it.  Each token is dynamically
+	allocated.
+
+void pls_free_tok( Pls_tok ** ppT ): Destroys a token, deallocating all
+	associated memory.
+
+int pls_preserve( void ): Instructs the tokenizer to return tokens for
+	comments and white space.
+
+int pls_nopreserve( void ): Instructs the tokenizer to discard comments and
+	white space.
+
+size_t pls_tok_size( const Pls_tok * pT ): Returns the total length of a
+	token's text.
+
+char * pls_copy_text( const Pls_tok * pT, char * p, size_t n ): Copies a
+	token's text to a specified location.
+
+void pls_write_text( const Pls_tok * pT, FILE * pF ): Writes a token's text
+	to a specified file.
+
+const char * pls_keyword_name( Pls_token_type t ): Returns a pointer to
+	the reserved word, if any, corresponding to a given token type.
+
+int pls_is_keyword( Pls_token_type t ): Returns TRUE if a token type
+	represents a reserved word, and FALSE otherwise.
+
+
+TOKENS
+
+Each token is represented by a Pls_tok structure, which currently contains
+the following members:
+
+	Pls_token_type type;
+
+This enum specifies the kind of token.  The plstok.h header defines the
+possible values.
+
+	int line;
+	int col;
+
+These members represent the position in the source text (line number and
+column number) of the first character in the token.
+
+	char buf[ PLS_BUFLEN ];
+
+This member contains the text of a token as a nul-terminated string, exactly
+as it appears in the source text.  When a token is too long, the excess is
+stored internally in a linked list of segments.  Hence a token may be
+arbitrarily large, subject only to memory constraints.
+
+As a shortcut, it is safe to access this buffer directly for tokens which are
+guaranteed to fit within the available length, identifiers in particular.
+If there is a chance that the token may not fit within this buffer, the
+client code should use the pls_write_text() and pls_copy_text() functions to
+access the token text.
+
+	char * msg;
+
+For error tokens (T_error), this member points to a nul-terminated string
+containing an error message.  The client code may safely replace this
+message as long as it frees the original with a call to freeMemory() and
+allocates the new one with a call to allocMemory().
+
+Other members of the Pls_tok structure are intended only for internal use.
+
+
+CREATING A TOKEN
+
+The pls_next_tok() function identifies the next token in a previously
+opened Sfile, dynamically allocates and populates a Pls_tok for it, and
+returns a pointer to the newly created Pls_tok.  If it encounters a syntax
+error, it will return a pointer to an error token carrying an appropriate
+message.  If it ever returns NULL, it will be because of a failure to
+allocate enough memory.
+
+
+DESTROYING A TOKEN
+
+It is the client code's responsibility to deallocate a Pls_tok when it is
+no longer needed, through a call to pls_free_tok().  Since a Pls_tok may
+point to other blocks of dynamically allocated memory, an attempt to
+destroy a token by calling free() or freeMemory() may cause a memory leak.
+
+
+PRESERVING WHITE SPACE AND COMMENTS
+
+By default, the tokenizer returns tokens for white space or comments.
+Though these tokens have no semantic significance, they enable the client
+code to reconstruct the exact appearance of the original source code.
+
+By calling pls_nopreserve(), the client code can instruct the tokenizer to
+suppress white space and comment tokens, returning only the tokens which
+affect the semantics of the source code.  The pls_preserve() function has
+the opposite effect, restoring the default behavior.
+
+Each of these functions returns TRUE or FALSE, reflecting the prior state
+of the tokenizer: TRUE if the tokenizer was preserving white space and
+comments, and FALSE if it wasn't (these macros are defined in util.h).
+This feature enables the client code to change the setting temporarily and
+then restore it.
+
+If the client code parses multiple inputs concurrently, these functions
+will affect all of them.  If some inputs need to have different settings
+from others, it will be necessary to set and restore the setting with each
+call to pls_next_tok().
+
+
+FETCHING TOKEN TEXT
+
+The pls_tok_size() function returns the total length of a token's text,
+not including a terminal nul.  The client code may, for example, use this
+size to allocate an appropriate buffer.
+
+The pls_copy_text() function copies the full text of a token as a
+nul-terminated string to a specified buffer, up to a specified number of
+characters (including the terminal nul).
+
+The pls_write_text() function copies the full text of a token to a
+specified file.  By writing the text of each token, the client code can
+produce an exact replica of the original source code.
+
+
+IDENTIFYING RESERVED WORDS
+
+The pls_keyword_name() function returns a pointer to the reserved word,
+in all capital letters, corresponding to a given token type.  If there
+is no corresponding reserved word, the pointer will point to an empty
+string.
+
+The pointers returned are distinct for each reserved word, and the contents
+of the strings to which they point will not change (unless perverse or buggy
+client code changes them).
+
+The pls_is_keyword() function returns TRUE or FALSE depending on whether a
+given token type represents a reserved word.
+
+As currently implemented, each of these two functions performs a linear
+search of an array.  If you call pls_is_keyword() first, and then call
+pls_keyword_name() if you get a TRUE, then you'll perform the same linear
+search twice.  It would be more efficient to just call pls_keyword_name()
+and check for an empty string.
+
+These functions are included for completeness, but they are not terribly
+useful except for testing and debugging the plstok package itself.

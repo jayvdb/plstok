@@ -1,0 +1,137 @@
+<HTML>
+
+<HEAD>
+
+
+<META NAME="keywords" CONTENT="PL/SQL, OPEN SOFTWARE, PLSTOK">
+<TITLE>plstok: A PL/SQL Tokenizer</TITLE>
+</HEAD>
+
+<BODY BGCOLOR="ffffe0">
+
+<EM>Free PL/SQL Utilities</EM>
+
+<H2 ALIGN="center">plstok: A PL/SQL Tokenizer</H2>
+
+<HR>
+
+Plstok is not a separate program -- it is a collection of routines for
+recognizing lexical tokens within PL/SQL source code.  It is the core of
+the utilities offered at this site.  Because it is open software, you
+can modify or enhance it, or you can incorporate it into your own programs.
+<P>
+Plstok is currently at release level 1.0.0.
+
+<H3>Design Features</H3>
+
+<OL>
+<LI>Each token carries the line number and column number where the
+corresponding source text occurs.</LI>
+<P>
+<LI>Plstok can preserve every character of the original source text, including
+white space and comments.  The client code can reconstruct the original
+source text exactly (in annotated listings, for example).</LI>
+<P>
+<LI>Optionally, plstok can discard comments and white space so that higher
+levels of analysis needn't concern themselves with them.</LI>
+<P>
+<LI>Plstok recognizes tokens of arbitrary length (such as long string
+literals), subject only to memory constraints.</LI>
+<P>
+<LI>Through the use of a callback function, the source code may come from a
+source other than a file (e.g. a database table).</LI>
+<P>
+<LI>To streamline memory management, plstok caches unused memory blocks for
+reuse.  It releases unneeded memory automatically when memory is exhausted.
+</LI>
+<P>
+<LI>Multiple source texts may be parsed concurrently.</LI>
+<P>
+<LI>Errors are reported in the form of error tokens bearing error messages.
+The client code chooses how and whether to issue the messages.</LI>
+<P>
+<LI>Plstok will detect most lexical errors, i.e. malformed tokens, because it
+can hardly avoid detecting them.  An out-of-range numeric literal will escape
+detection.  Syntax errors -- i.e. illegal sequences of legal tokens -- are
+not its job to detect.</LI>
+</OL>
+
+<H3>Other Goodies</H3>
+
+Included are two layers of software which may be useful in other contexts.
+<P>
+One is a simple memory-management layer which, when compiled in debugging
+mode, helps to detect memory leaks.  It also provides a facility for
+scavenging memory when resources are low.
+<P>
+The other is a collection of routines for reading generalized source code.
+It keeps track of line numbers and column numbers, and maintains a small
+pushback stack for putting characters back into the input stream.
+
+<H3>What You Need</H3>
+
+<OL>
+<LI><A HREF="util.h">util.h</A>: miscellaneous macros and prototypes</LI>
+<P>
+<LI><A HREF="sfile.h">sfile.h</A>: header for reading generalized
+source code</LI>
+<P>
+<LI><A HREF="plstok.h">plstok.h</A>: header for plstok routines</LI>
+<P>
+<LI><A HREF="plspriv.h">plspriv.h</A>: header for internal use within
+the plstok routines</LI>
+<P>
+<LI><A HREF="myassert.c">myassert.c</A>: needed only for compiling in
+debugging mode</LI>
+<P>
+<LI><A HREF="memmgmt.c">memmgmt.c</A>: routines for memory management</LI>
+<P>
+<LI><A HREF="sfile.c">sfile.c</A>: routines for reading generalized
+source code</LI>
+<P>
+<LI><A HREF="plstok00.c">plstok00.c</A>: low-level routines internal to
+plstok</LI>
+<P>
+<LI><A HREF="plstok01.c">plstok01.c</A>: tokenizing routines</LI>
+<P>
+<LI><A HREF="plstok02.c">plstok02.c</A>: routines for recognizing
+reserved words</LI>
+</OL>
+
+<H3>Documentation</H3>
+
+<OL>
+<LI><A HREF="overview.txt">overview.txt</A>: general description of 
+plstok and the associated utilities</LI>
+<P>
+<LI><A HREF="srcfiles.txt">srcfiles.txt</A>: brief description of the
+source files included in this distribution</LI>
+<P>
+<LI><A HREF="plstok.txt">plstok.txt</A>: the interface to plstok</LI>
+<P>
+<LI><A HREF="tokens.txt">tokens.txt</A>: tokens as represented by plstok</LI>
+<P>
+<LI><A HREF="sfile.txt">sfile.txt</A>: routines for reading generalized 
+source code</LI>
+<P>
+<LI><A HREF="memmgmt.txt">memmgmt.txt</A>: memory management routines</LI>
+<P>
+<LI><A HREF="gnugpl.txt">gnugpl.txt</A>: the GNU General Public License,
+which covers all of the source code in this distribution (with the
+exception of myassert.c)</LI>
+</OL>
+
+<HR>
+
+<A HREF="index.html">
+<IMG SRC="home.gif" HEIGHT="34" WIDTH="50" BORDER=0
+ALIGN="middle" ALT="home"></A>
+
+</BODY>
+</HTML>
+
+<!--
+     FILE ARCHIVED ON 13:20:37 Oct 6, 2007 AND RETRIEVED FROM THE
+     INTERNET ARCHIVE ON 22:18:05 Oct 29, 2015.
+     JAVASCRIPT APPENDED BY WAYBACK MACHINE HAS BEEN REMOVED MANUALLY.
+-->

@@ -1,0 +1,124 @@
+               PLSTOK, A PL/SQL TOKENIZER: OVERVIEW
+
+This distribution contains C source code for plstok, a PL/SQL tokenizer.  It 
+also includes a test driver for it (ttok.c) and two small but possibly useful
+utilities: plscap (which changes reserved words to upper case and
+identifiers to lower case) and plsenull (which looks for attempts to test
+for equality to NULL).
+
+A tokenizer, also known as a lexical analyzer, reads source code and
+repackages it as a series of tokens such as identifiers, operators, keywords,
+and string literals.  Further stages of analysis can then interpret sequences
+of tokens in terms of larger semantic units such as expressions, statements,
+loops, and procedures.
+
+This package is directed at C programmers who may have occasion to analyze
+PL/SQL code.  The ttok program itself is pretty useless except as a testbed
+and demo for the tokenizer.  The plscap program may be useful if you like
+its style of capitalization, but it is intended mainly as a demonstration.
+The plsenull program can help you catch one kind of careless blunder.
+
+The tokenizer itself, plstok, may be incorporated into other, more useful
+programs such as:
+
+1. A beautifier to impose a consistent style of indentation;
+
+2. A cross-reference generator;
+
+3. A lint-like program to warn about constructs which are legal but dubious
+   (such as a test for equality to NULL).
+
+Such programs are available as proprietary products.  Plstok provides a
+basis for open software to be shared and collectively enhanced by its users.
+
+To that end, the source code in this distribution (with the exception of 
+myassert.c) is released under the GNU General Public License.  In brief: you
+may freely use or modify the plstok source code in your own programs, but 
+you may not restrict its use by others.  If you distribute a program 
+substantially based on plstok, you must make the source code available on 
+the same terms.  For the legal details, see the license included with this 
+distribution.
+
+
+DESIGN FEATURES
+
+1. Each token carries the line number and column number where the
+corresponding source text occurs.
+
+2. Plstok can preserve every character of the original source text, including
+white space and comments.  The client code can reconstruct the original
+source text exactly (in annotated listings, for example).
+
+3. Optionally, plstok can discard comments and white space so that higher
+levels of analysis needn't concern themselves with them.
+
+4. Plstok recognizes tokens of arbitrary length (such as long string
+literals), subject only to memory constraints.
+
+5. Through the use of a callback function, the source code may come from a
+source other than a file (e.g. a database table).
+
+6. To streamline memory management, plstok caches unused memory blocks for
+reuse.  It releases unneeded memory automatically when memory is exhausted.
+
+7. Multiple source texts may be parsed concurrently.
+
+8. Errors are reported in the form of error tokens bearing error messages.
+The client code chooses how and whether to issue the messages.
+
+9. Plstok will detect most lexical errors, i.e. malformed tokens, because it
+can hardly avoid detecting them.  An out-of-range numeric literal will escape
+detection.  Syntax errors -- i.e. illegal sequences of legal tokens -- are
+not its job to detect.
+
+
+PROGRAMMER'S NOTES
+
+So far as I know, plstok does not rely on any compiler- or system-dependent
+features, and should be completely portable to any hosted implementation of
+ISO C.  In a few cases it writes messages to stderr.  This use of stderr
+may not be appropriate in some environments (such as a GUI).  Modify the
+code as needed.
+
+Besides the tokenizing logic itself, plstok incorporates two layers of
+code which may be useful in other contexts:
+
+1. memmgmt.c is a simple memory-management layer, mostly a wrapper for
+   malloc(), free(), and related functions.  If compiled without NDEBUG
+   #defined, it helps find memory leaks.  It also provides a memory-scavenging
+   facility that tries to make more memory available when needed.  All
+   dynamically allocated memory in plstok is managed through this module.
+
+2. sfile.c is a collection of functions for reading generalized source
+   code.  It keeps track of line and column numbers and provides a small
+   pushback stack for putting characters back into the input stream.  It
+   also enables you to install your own callback function to fetch source
+   code from something other than a file.
+
+These layers are documented in a fair degree of detail, as is the tokenizer
+itself.  For details not adequately covered in the documentation -- read the
+code.  If you know C well enough to use this package, you know it well enough
+to figure out for yourself how the code works.  (That may not always be true
+if the project grows much, but it's true now.)
+
+Plstok is not thread-safe, and never will be without considerable effort
+by someone who knows more about multithreading than I do.
+
+One minor point: The source code will be most readable if you set your
+tabstops at four spaces.  Otherwise the indentation may look weird.
+
+
+ACKNOWLEDGEMENT AND DISCLAIMER
+
+PL/SQL is a proprietary language developed by Oracle Corporation as part
+of their database offerings.  Oracle is not responsible for plstok, and is
+certainly not responsible for any deficiencies thereof.
+
+The behavior of plstok is based on my understanding of PL/SQL as gleaned
+from Oracle's documentation.  There can be no assurance that either my
+understanding or the behavior of plstok is completely correct.  I welcome
+corrections and suggestions from anyone qualified to offer them.
+
+Scott McKellar
+mck9@swbell.net
+June 27, 1999

@@ -1,0 +1,21 @@
+                               TTOK
+
+Ttok is a test driver for the plstok routines.  It reads a text file,
+breaks it up into PL/SQL tokens, and displays the results.  It also writes
+a second text file, "copy.txt", which should be an exact duplicate of the
+input file.  Hence you can verify that the tokenizer preserves all the
+information in the original.
+
+Ttok accepts one optional command-line parameter to specify the name of the
+input file.  In the absence of such a parameter, ttok reads standard input.
+
+Apart from copy.txt, and apart from some possible error messages written
+to standard error, all output is written to standard output.  For each
+token, ttok writes the line number and column where the token appears in the
+original source text, followed by a description of the token.
+
+When a token consists of a string literal, character literal, or quoted
+identifier, ttok displays the contents of the quoted text.  If this text
+includes one or more newline characters, ttok will write the newlines as
+well.  As a result there may be more output lines than tokens.
+
