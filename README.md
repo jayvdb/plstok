@@ -31,20 +31,11 @@ Utilities Available
 The tools currently available include:
 
 * ttok -- a demo and test driver for the tokenizer, plstok.
-
-* plscap -- raises reserved words to upper case,
-and changes identifiers to lower case.
-
+* plscap -- raises reserved words to upper case, and changes identifiers to lower case.
 * plscount -- counts PL/SQL tokens.
-
-* plsenull -- finds constructs which attempt
-to test for equality (or inequality) to NULL.
-
-* plsqlf -- finds string or character
-literals which contain embedded line feeds.
-
-* plsb -- reformats PL/SQL source code to apply
-consistent use of indentation and white space (still under development).
+* plsenull -- finds constructs which attempt to test for equality (or inequality) to NULL.
+* plsqlf -- finds string or character literals which contain embedded line feeds.
+* plsb -- reformats PL/SQL source code to apply consistent use of indentation and white space (still under development).
 
 
 On the Use of Text Files
