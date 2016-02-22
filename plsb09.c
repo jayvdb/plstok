@@ -92,7 +92,7 @@ int do_fetch_syntax( Toknode * pTN )
 /*******************************************************************
  do_fetch -- We have just found FETCH.  Look for INTO.
  ******************************************************************/
-static void do_fetch( Toknode * pTN )
+void do_fetch( Toknode * pTN )
 {
 	switch( pTN->type )
 	{

@@ -21,6 +21,9 @@
 #ifndef PLSTOK_H
 #define PLSTOK_H
 
+#include <stdio.h>
+#include "sfile.h"
+
 typedef enum
 {
 	T_eof,			/* end of file */
