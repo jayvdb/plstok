@@ -193,6 +193,13 @@ static Toknode * alloc_toknode( Pls_tok * pT )
 	if( NULL == pT )
 		return NULL;
 
+	// FIXME: the memory manager is seg faulting.
+	// given the average size of PL/SQL code, it would be better
+	// to use a simple algorithm that isnt very memory efficient during
+	// processing, but cleans up after itself when the tokenised document
+	// is no longer needed.
+	pFree = NULL;
+
 	/* allocate a Toknode */
 
 	if( NULL == pFree )

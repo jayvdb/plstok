@@ -289,7 +289,11 @@ static int keyword_cmp( const void * p1, const void * p2 );
  **************************************************************************/
 Pls_token_type pls_keyword( const char * s )
 {
-	static int sorted = FALSE;
+	// FIXME: sorted was supposed to be FALSE.
+	// I am not sure that it is helpful.
+	// An alternative approach is to ensure the lookups
+	// are using ASCII even when it isnt the users locale.
+	static int sorted = TRUE;
 	const keyword * pWord;
 
 	if( FALSE == sorted )
